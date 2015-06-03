@@ -98,6 +98,9 @@ if( ! class_exists( 'EDD_Download_All' ) ) {
             // Add our extension settings
             add_filter( 'edd_settings_extensions', array( $this, 'add_settings' ) );
 
+            // Display notice if ZipArchive isn't available
+            add_action( 'admin_notices', array( $this, 'show_notice' ) );
+
             // Handle licensing
             if( class_exists( 'EDD_License' ) ) {
                 $license = new EDD_License( __FILE__, 'Download All', EDD_DOWNLOAD_ALL_VER, 'Daniel J Griffiths' );
@@ -176,6 +179,22 @@ if( ! class_exists( 'EDD_Download_All' ) ) {
             } else {
                 // Load the default language files
                 load_plugin_textdomain( 'edd-download-all', false, $lang_dir );
+            }
+        }
+
+
+        /**
+         * Display notice if ZipArchive isn't available
+         *
+         * @access      public
+         * @since       1.0.0
+         * @return      void
+         */
+        public function show_notice() {
+            if( ! class_exists( 'ZipArchive' ) ) {
+                echo '<div class="error">';
+                echo '<p>' . sprintf( __( 'Download All requires the ZipArchive class to be available. Please <a href="%s" target="_blank">install/enable</a> it to continue.', 'edd-download-all' ), 'http://us3.php.net/manual/en/zip.setup.php' ) . '</p>';
+                echo '</div>';
             }
         }
     }
