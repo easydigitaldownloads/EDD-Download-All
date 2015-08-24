@@ -24,10 +24,18 @@ if( ! defined( 'ABSPATH' ) ) {
 function edd_download_all_after_receipt( $payment, $receipt_args ) {
     $files = edd_download_all_get_files( $payment->ID );
 
+    if( ! isset( $_GET['payment_key'] ) ) {
+        $payment_key = edd_get_payment_key( $payment->ID );
+        $download_url = esc_url( add_query_arg( array( 'payment_key' => $payment_key, 'edd_action' => 'download_all_files' ) ) );
+    } else {
+        $download_url = esc_url( add_query_arg( 'edd_action', 'download_all_files' ) );
+    }
+
+
     if( count( $files ) > 1 ) {
         echo '<tr>';
         echo '<td><strong>' . edd_get_option( 'edd_download_all_table_label', __( 'Download All Files:', 'edd-download-all' ) ) . '</strong></td>';
-        echo '<td><a href="' . esc_url( add_query_arg( 'edd_action', 'download_all_files' ) ) . '">' . edd_get_option( 'edd_download_all_link_text', __( 'Download', 'edd-download-all' ) ) . '</a></td>';
+        echo '<td><a href="' . $download_url . '">' . edd_get_option( 'edd_download_all_link_text', __( 'Download', 'edd-download-all' ) ) . '</a></td>';
         echo '</tr>';
     }
 }

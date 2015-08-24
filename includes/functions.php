@@ -117,26 +117,16 @@ function edd_download_all_cache_files( $files ) {
             $hosted = 'dropbox';
         } elseif( filter_var( $file_url, FILTER_VALIDATE_URL ) === FALSE && $file_url[0] !== '/' ) {
             $hosted = 'amazon';
-        } elseif( filter_var( $file_url, FILTER_VALIDATE_URL ) === FALSE && strpos( $file_url, 'AWSAccessKeyID' ) !== false ) {
+        } elseif( strpos( $file_url, 'AWSAccessKeyID' ) !== false ) {
             $hosted = 'amazon';
         }
 
         if( $hosted != 'local' ) {
             if( $hosted == 'amazon' ) {
                 // Handle S3
-                if( strpos( $file_url, 'AWSAccessKeyID' ) !== false ) {
-                    if( $url = parse_url( $file_url ) ) {
-                        $file_name = ltrim( $url['path'], '/' );
-                    }
-                } else {
-                    if( isset( $GLOBALS['edd_s3'] ) ) {
-                        $file_name  = $GLOBALS['edd_s3']->get_s3_url( $file_url );
-                        $file_url   = $file_name;
-                    }
-                }
-
-                $file_name = explode( '?', basename( $file_name ) );
-                $file_name = $file_name[0];
+                $file_url = $file_data['url'];
+                $file_name = $file_data['direct'];
+                $file_name = basename( $file_name );
             } elseif( $hosted == 'dropbox' ) {
                 // We can't work with Dropbox!
                 edd_die( __( 'We can\'t currently bundle these files. Please download them individually.', 'edd-download-all' ), __( 'Oops!', 'edd-download-all' ) );
