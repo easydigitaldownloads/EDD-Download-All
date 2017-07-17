@@ -31,9 +31,11 @@ function edd_download_all_get_files( $payment_id = 0 ) {
             if( empty( $item['in_bundle'] ) ) {
                 $price_id       = edd_get_cart_item_price_id( $item );
                 $download_files = edd_get_download_files( $item['id'], $price_id );
-        
+
                 if( ! empty( $download_files ) && is_array( $download_files ) ) {
                     foreach( $download_files as $filekey => $file ) {
+                        // Skip files that are just external webpages
+                        if ( strpos( edd_get_file_extension( $file['file'] ), 'com/' ) !== false ) continue;
                         $filename = basename( $file['file'] );
                         $files[$filename] = array(
                             'url'       => edd_get_download_file_url( $meta['key'], $email, $filekey, $item['id'], $price_id ),
@@ -48,6 +50,8 @@ function edd_download_all_get_files( $payment_id = 0 ) {
 
                         if( $download_files && is_array( $download_files ) ) {
                             foreach( $download_files as $filekey => $file ) {
+                                // Skip files that are just external webpages
+                                if ( strpos( edd_get_file_extension( $file['file'] ), 'com/' ) !== false ) continue;
                                 $filename = basename( $file['file'] );
                                 $files[$filename] = array(
                                     'url'       => edd_get_download_file_url( $meta['key'], $email, $filekey, $bundle_item, $price_id ),
@@ -160,46 +164,49 @@ function edd_download_all_cache_files( $files ) {
  * @return      void
  */
 function edd_download_all_files() {
-    if( isset( $_GET['payment_key'] ) ) {
-        $payment    = edd_get_payment_by( 'key', $_GET['payment_key'] );
-        $files      = edd_download_all_get_files( $payment->ID );
-        $files      = edd_download_all_cache_files( $files );
 
-        // Setup file path
-        if( edd_get_option( 'edd_download_all_cache' ) ) {
-            $wp_upload_dir  = wp_upload_dir();
-            $file_path      = $wp_upload_dir['basedir'] . '/edd-download-all-cache/';
-        } else {
-            // Set the output path to the system temp directory if caching is disabled
-            $file_path = sys_get_temp_dir() . '/';
-        }
+    // Make sure a payment ID is provided
+    if ( !isset( $_GET['payment_id'] ) ) return;
 
-        $zip_name = apply_filters( 'edd_download_files_zip_name', strtolower( str_replace( ' ', '-', get_bloginfo( 'name' ) ) ) . '-bundle-' . $payment->ID . '.zip' );
-        $zip_file = $file_path . $zip_name;
+    // Variables
+    $payment    = edd_get_payment( $_GET['payment_id'] );
+    $files      = edd_download_all_get_files( $payment->ID );
+    $files      = edd_download_all_cache_files( $files );
 
-        if( class_exists( 'ZipArchive' ) ) {
-            if( ! file_exists( $zip_file ) ) {
-                $zip = new ZipArchive();
-
-                if( $zip->open( $zip_file, ZIPARCHIVE::CREATE ) !== TRUE ) {
-                    edd_die( __( 'An unknown error occurred, please try again!', 'edd-free-downloads' ), __( 'Oops!', 'edd-free-downloads' ) );
-                    exit;
-                }
-
-                foreach( $files as $file_name => $file_data ) {
-                    $zip->addFile( $file_data['path'], $file_name );
-                }
-
-                $zip->close();
-            }
-        }
-
-        // Deliver the file to the user
-        header( 'Content-type: application/octet-stream' );
-        header( 'Content-Disposition: attachment; filename="' . $zip_name . '"' );
-
-        edd_deliver_download( $zip_file );
-        exit;
+    // Setup file path
+    if ( edd_get_option( 'edd_download_all_cache' ) ) {
+        $wp_upload_dir  = wp_upload_dir();
+        $file_path      = $wp_upload_dir['basedir'] . '/edd-download-all-cache/';
+    } else {
+        // Set the output path to the system temp directory if caching is disabled
+        $file_path = sys_get_temp_dir() . '/';
     }
+
+    $zip_name = apply_filters( 'edd_download_files_zip_name', strtolower( str_replace( ' ', '-', get_bloginfo( 'name' ) ) ) . '-bundle-' . $payment->ID . '.zip' );
+    $zip_file = $file_path . $zip_name;
+
+    if( class_exists( 'ZipArchive' ) ) {
+        if( ! file_exists( $zip_file ) ) {
+            $zip = new ZipArchive();
+
+            if( $zip->open( $zip_file, ZIPARCHIVE::CREATE ) !== TRUE ) {
+                edd_die( __( 'An unknown error occurred, please try again!', 'edd-free-downloads' ), __( 'Oops!', 'edd-free-downloads' ) );
+                exit;
+            }
+
+            foreach( $files as $file_name => $file_data ) {
+                $zip->addFile( $file_data['path'], $file_name );
+            }
+
+            $zip->close();
+        }
+    }
+
+    // Deliver the file to the user
+    header( 'Content-type: application/octet-stream' );
+    header( 'Content-Disposition: attachment; filename="' . $zip_name . '"' );
+
+    edd_deliver_download( $zip_file );
+    exit;
 }
 add_action( 'edd_download_all_files', 'edd_download_all_files' );

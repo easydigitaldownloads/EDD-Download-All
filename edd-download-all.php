@@ -1,15 +1,13 @@
 <?php
 /**
- * Plugin Name:     Easy Digital Downloads - Download All
- * Plugin URI:      https://easydigitaldownloads.com/extensions/download-all/
- * Description:     Adds a download all option to multi-file downloads in EDD
- * Version:         1.0.0
- * Author:          Daniel J Griffiths
- * Author URI:      http://section214.com
- * Text Domain:     edd-download-all
- *
- * @package         EDD\DownloadAll
- * @author          Daniel J Griffiths <dgriffiths@section214.com>
+ * Plugin Name:       Easy Digital Downloads - Download All
+ * Plugin URI:        https://github.com/cferdinandi/gmt-edd-download-all
+ * GitHub Plugin URI: https://github.com/cferdinandi/gmt-edd-download-all
+ * Description:       Adds a download all option to multi-file downloads in EDD
+ * Version:           2.0.0
+ * Author:            Chris Ferdinandi
+ * Author URI:        https://gomakethings.com
+ * Text Domain:       edd-download-all
  */
 
 
@@ -64,7 +62,7 @@ if( ! class_exists( 'EDD_Download_All' ) ) {
          */
         private function setup_constants() {
             // Plugin version
-            define( 'EDD_DOWNLOAD_ALL_VER', '1.0.0' );
+            define( 'EDD_DOWNLOAD_ALL_VER', '2.0.0' );
 
             // Plugin path
             define( 'EDD_DOWNLOAD_ALL_DIR', plugin_dir_path( __FILE__ ) );
@@ -96,6 +94,7 @@ if( ! class_exists( 'EDD_Download_All' ) ) {
          */
         private function hooks() {
             // Add our extension settings
+            add_filter( 'edd_settings_sections_extensions', array( $this, 'add_settings_section' ) );
             add_filter( 'edd_settings_extensions', array( $this, 'add_settings' ) );
 
             // Display notice if ZipArchive isn't available
@@ -109,6 +108,20 @@ if( ! class_exists( 'EDD_Download_All' ) ) {
 
 
         /**
+         * Add settings section
+         *
+         * @access      public
+         * @since       2.0.0
+         * @param       array $sections The current sections
+         * @return      array The modified plugin sections
+         */
+        public function add_settings_section( $sections ) {
+            $sections['gmt_edd_download_all'] = __( 'Download All', 'edd-download-all' );
+            return $sections;
+        }
+
+
+        /**
          * Add settings
          *
          * @access      public
@@ -117,7 +130,7 @@ if( ! class_exists( 'EDD_Download_All' ) ) {
          * @return      array The modified plugin settings
          */
         public function add_settings( $settings ) {
-            $new_settings = array(
+            $download_settings = array(
                 array(
                     'id'    => 'edd_download_all_settings',
                     'name'  => '<span class="field-section-title">' . __( 'Download All', 'edd-download-all' ) . '</span>',
@@ -146,7 +159,12 @@ if( ! class_exists( 'EDD_Download_All' ) ) {
                 )
             );
 
-            return array_merge( $settings, $new_settings );
+            // return array_merge( $settings, $new_settings );
+
+            if ( version_compare( EDD_VERSION, 2.5, '>=' ) ) {
+                $download_settings = array( 'gmt_edd_download_all' => $download_settings );
+            }
+            return array_merge( $settings, $download_settings );
         }
 
 
